@@ -1,4 +1,12 @@
-int amountofwobs = 3;
+import controlP5.*;
+ControlP5 cp5;
+
+int wobLeft =1;
+int wobRight=1;
+int currentLeft=0;
+int currentRight=0;
+
+int amountofwobs = 2;
 String currentlyActive="";
 int mainParameter = -1;
 int secondaryParameter =-1;
@@ -16,6 +24,9 @@ NetAddress myRemoteLocation;
 
 void setup() {
   size(400, 400);
+  cp5 = new ControlP5(this);
+  cp5.addSlider("wobLeft",1,7).linebreak();
+  cp5.addSlider("wobRight",1,7);
 
   MidiBus.list(); // List all available Midi devices on STDOUT. This will show each device's index and name.
 
@@ -33,7 +44,7 @@ void setup() {
 void draw() {
   background(0);
   fill(255);
-  text("currently active = "+currentlyActive, 100, 100);
+  text("currently active = "+currentLeft+currentRight, 100, 100);
   text("main parameter = "+mainParameter, 100, 200);
   text("secondary parameter = "+secondaryParameter, 100, 300);
 }
@@ -47,15 +58,10 @@ void controllerChange(int channel, int number, int value, long timestamp, String
   println("Number:"+number);
   println("Value:"+value);
   println("Recieved on Bus:"+bus_name);
-
   String adress = "";
-  if (bus_name.equals(currentlyActive)) {
-    adress = "main";
-    mainParameter = value;
-  } else {
-    adress = "secondary";
-    secondaryParameter = value;
-  }
+if(channel<7)  adress="/left";
+  else adress="/right";
+
 
   OscMessage myMessage = new OscMessage(adress);
   myMessage.add(value);
@@ -73,6 +79,9 @@ void noteOn(int channel, int pitch, int velocity, long timestamp, String bus_nam
   println("Velocity:"+velocity);
   println("Timestamp:"+timestamp);
   println("Recieved on Bus:"+bus_name);
+  
+  if(channel<7)  currentLeft=wobLeft;
+  else currentRight=wobRight;
 
   if (currentlyActive.equals("")) {
     currentlyActive=bus_name;
@@ -82,10 +91,10 @@ void noteOn(int channel, int pitch, int velocity, long timestamp, String bus_nam
     for (int i=0; i<amountofwobs; i++) {
       if (currentlyActive.equals(busses[i]))currentWob=i;
     }
-    OscMessage myMessage = new OscMessage("/currentwob");
-    myMessage.add(currentWob);
+    OscMessage myMessage = new OscMessage("/currentcamera");
+    myMessage.add(currentLeft+currentRight);
     oscP5.send(myMessage, myRemoteLocation); 
-    println("OSC mssg send currentWob: "+currentWob);
+    println("OSC mssg send currentcamera: "+currentLeft+currentRight);
   }
 }
 
@@ -98,16 +107,20 @@ void noteOff(int channel, int pitch, int velocity, long timestamp, String bus_na
   println("Velocity:"+velocity);
   println("Timestamp:"+timestamp);
   println("Recieved on Bus:"+bus_name);
+  
+  if(channel<7)  currentLeft=0;
+  else  currentRight=0;
+  
   if (bus_name.equals(currentlyActive)) {
     //reset the parameters
     currentlyActive="";
     mainParameter = -1;
     secondaryParameter =-1;
     
-    OscMessage myMessage = new OscMessage("/currentwob");
-    myMessage.add(-1);
+    OscMessage myMessage = new OscMessage("/currentcamera");
+    myMessage.add(currentLeft+currentRight);
     oscP5.send(myMessage, myRemoteLocation); 
-    println("OSC mssg reset currentWob");
+    println("OSC mssg send currentcamera: "+currentLeft+currentRight);
   }
 }
 
