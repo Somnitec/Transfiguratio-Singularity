@@ -40,8 +40,6 @@ void setup() {
   size(400, 400);
   frameRate(30);
   cp5 = new ControlP5(this);
-  cp5.addSlider("wobLeft", 1, 7).linebreak();
-  cp5.addSlider("wobRight", 1, 10).linebreak();
   cp5.addSlider("scaleHigh", 0., 10).linebreak();
   cp5.addSlider("scaleMid", 0., 10).linebreak();
   cp5.addSlider("scaleLow", 0., 10).linebreak();
@@ -131,7 +129,7 @@ void noteOn(int channel, int pitch, int velocity, long timestamp, String bus_nam
 
   //if twoWobMode
 
-  if (channel != currentLeft||channel != currentRight) {
+  if (channel != currentLeft-1||channel != currentRight-1) {
     if (channel<7) {
       if (twoWobMode)currentLeft=wobLeft;
       else currentLeft = channel;
@@ -158,7 +156,7 @@ void noteOff(int channel, int pitch, int velocity, long timestamp, String bus_na
   println("Timestamp:"+timestamp);
   println("Recieved on Bus:"+bus_name);
 
-  if (channel == currentLeft||channel == currentRight) {
+  if (channel == currentLeft-1||channel == currentRight-1) {
 
     if (channel<7) currentLeft=0;
     else  currentRight=0;
