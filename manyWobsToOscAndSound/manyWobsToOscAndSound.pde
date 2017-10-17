@@ -7,6 +7,8 @@ Minim minim;
 AudioInput input;
 FFT fftLin;
 
+boolean twoWobMode = false;
+
 float scaleHigh =1;
 float scaleMid =1;
 float scaleLow =1;
@@ -16,10 +18,12 @@ int wobRight=1;
 int currentLeft=0;
 int currentRight=0;
 
-int amountofwobs = 2;
-String currentlyActive="";
+int amountofwobs = 14;
+
 int leftvalue = -1;
 int rightvalue =-1;
+
+int currentlyActive = 0;
 
 import themidibus.*; //Import the library
 
@@ -40,7 +44,10 @@ void setup() {
   cp5.addSlider("wobRight", 1, 10).linebreak();
   cp5.addSlider("scaleHigh", 0., 10).linebreak();
   cp5.addSlider("scaleMid", 0., 10).linebreak();
-  cp5.addSlider("scaleLow", 0., 10);
+  cp5.addSlider("scaleLow", 0., 10).linebreak();
+  cp5.addToggle("twoWobMode").linebreak();
+  cp5.addSlider("wobLeft", 1, 7).linebreak();
+  cp5.addSlider("wobRight", 1, 10).linebreak();
 
   MidiBus.list(); // List all available Midi devices on STDOUT. This will show each device's index and name.
 
@@ -53,36 +60,36 @@ void setup() {
 
   oscP5 = new OscP5(this, 7001);
   myRemoteLocation = new NetAddress("127.0.0.1", 7000);
-  
+
   minim = new Minim(this);
   input = minim.getLineIn();
-  fftLin = new FFT(input.bufferSize(),input.sampleRate());
+  fftLin = new FFT(input.bufferSize(), input.sampleRate());
   fftLin.linAverages(3);
 }
 
 void draw() {
   fftLin.forward(input.mix);
-  int highvalue=(int)constrain(fftLin.getBand(2)*scaleHigh,0,127);
-  int midvalue=(int)constrain(fftLin.getBand(1)*scaleMid,0,127);
-  int lowvalue=(int)constrain(fftLin.getBand(0)*scaleLow,0,127);
-  sendFreq("high",highvalue);
-  sendFreq("mid",midvalue);
-  sendFreq("low",lowvalue);
-  
+  int highvalue=(int)constrain(fftLin.getBand(2)*scaleHigh, 0, 127);
+  int midvalue=(int)constrain(fftLin.getBand(1)*scaleMid, 0, 127);
+  int lowvalue=(int)constrain(fftLin.getBand(0)*scaleLow, 0, 127);
+  sendFreq("high", highvalue);
+  sendFreq("mid", midvalue);
+  sendFreq("low", lowvalue);
+
   background(0);
   fill(255);
-  text("currently active = "+currentLeft+currentRight, 100, 200);
-  text("left value = "+leftvalue, 100, 220);
-  text("right value = "+rightvalue, 100, 240);
-  text("high value = "+highvalue, 100, 260);
-  text("mid value = "+midvalue, 100, 280);
-  text("low value = "+lowvalue, 100, 300);
+  text("currently active = "+nf(currentlyActive, 2), 100, 240);
+  text("left value = "+leftvalue, 100, 260);
+  text("right value = "+rightvalue, 100, 280);
+  text("high value = "+highvalue, 100, 300);
+  text("mid value = "+midvalue, 100, 320);
+  text("low value = "+lowvalue, 100, 340);
 }
 
-void sendFreq(String band, int value){
+void sendFreq(String band, int value) {
   OscMessage myMessage = new OscMessage("/"+band);
   myMessage.add(value);
-  oscP5.send(myMessage, myRemoteLocation); 
+  oscP5.send(myMessage, myRemoteLocation);
 }
 
 
@@ -96,11 +103,10 @@ void controllerChange(int channel, int number, int value, long timestamp, String
   println("Value:"+value);
   println("Recieved on Bus:"+bus_name);
   String adress = "";
-  if (channel<7) { 
+  if (channel<7 && channel == currentLeft) { 
     adress="/left";
-  leftvalue=value;
-  }
-  else {
+    leftvalue=value;
+  } else if (channel>=7 && channel == currentRight) {
     adress="/right";
     rightvalue = value;
   }
@@ -123,21 +129,22 @@ void noteOn(int channel, int pitch, int velocity, long timestamp, String bus_nam
   println("Timestamp:"+timestamp);
   println("Recieved on Bus:"+bus_name);
 
-  if (channel<7)  currentLeft=wobLeft;
-  else currentRight=wobRight;
+  //if twoWobMode
 
-  if (currentlyActive.equals("")) {
-    currentlyActive=bus_name;
-
-
-    int currentWob =-1;
-    for (int i=0; i<amountofwobs; i++) {
-      if (currentlyActive.equals(busses[i]))currentWob=i;
+  if (channel != currentLeft||channel != currentRight) {
+    if (channel<7) {
+      if (twoWobMode)currentLeft=wobLeft;
+      else currentLeft = channel;
+    } else {
+      if (twoWobMode)currentRight=wobRight;
+      else currentRight=channel;
     }
+    currentlyActive=currentLeft*10+currentRight;
+
     OscMessage myMessage = new OscMessage("/currentcamera");
     myMessage.add(currentLeft*10+currentRight);
     oscP5.send(myMessage, myRemoteLocation); 
-    println("OSC mssg send currentcamera: "+currentLeft+currentRight);
+    println("OSC mssg send currentcamera: "+currentlyActive);
   }
 }
 
@@ -151,17 +158,18 @@ void noteOff(int channel, int pitch, int velocity, long timestamp, String bus_na
   println("Timestamp:"+timestamp);
   println("Recieved on Bus:"+bus_name);
 
-  if (channel<7)  currentLeft=0;
-  else  currentRight=0;
+  if (channel == currentLeft||channel == currentRight) {
 
-  if (bus_name.equals(currentlyActive)) {
-    //reset the parameters
-    currentlyActive="";
+    if (channel<7) currentLeft=0;
+    else  currentRight=0;
+
+
+    currentlyActive=currentLeft*10+currentRight;
 
     OscMessage myMessage = new OscMessage("/currentcamera");
     myMessage.add(currentLeft+currentRight);
     oscP5.send(myMessage, myRemoteLocation); 
-    println("OSC mssg send currentcamera: "+currentLeft+currentRight);
+    println("OSC mssg send currentcamera: "+currentlyActive);
   }
 }
 
