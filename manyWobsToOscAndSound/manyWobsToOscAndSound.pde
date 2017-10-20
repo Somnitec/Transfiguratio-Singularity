@@ -16,7 +16,7 @@ float scaleLow =1;
 int wobLeft =1;
 int wobRight=1;
 int currentLeft=0;
-int currentRight=0;
+int currentRight=7;
 
 int amountofwobs = 14;
 
@@ -102,10 +102,10 @@ void controllerChange(int channel, int number, int value, long timestamp, String
   println("Value:"+value);
   println("Recieved on Bus:"+bus_name);
   String adress = "";
-  if (channel<8 && channel == currentLeft) { 
+  if (channel<8){// && channel == currentLeft) { 
     adress="/left";
     leftvalue=value;
-  } else if (channel>=7 && channel == currentRight) {
+  } else if (channel>=7 ){//&& channel == currentRight) {
     adress="/right";
     rightvalue = value;
   }
