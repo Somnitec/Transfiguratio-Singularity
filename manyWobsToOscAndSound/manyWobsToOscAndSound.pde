@@ -57,7 +57,7 @@ void setup() {
   }
 
   oscP5 = new OscP5(this, 7001);
-  myRemoteLocation = new NetAddress("127.0.0.1", 7000);
+  myRemoteLocation = new NetAddress("192.168.2.78", 12000);
 
   minim = new Minim(this);
   input = minim.getLineIn();
@@ -93,6 +93,7 @@ void sendFreq(String band, int value) {
 
 void controllerChange(int channel, int number, int value, long timestamp, String bus_name) {
   // Receive a controllerChange
+  channel+=1;
   println();
   println("Controller Change:");
   println("--------");
@@ -101,7 +102,7 @@ void controllerChange(int channel, int number, int value, long timestamp, String
   println("Value:"+value);
   println("Recieved on Bus:"+bus_name);
   String adress = "";
-  if (channel<7 && channel == currentLeft) { 
+  if (channel<8 && channel == currentLeft) { 
     adress="/left";
     leftvalue=value;
   } else if (channel>=7 && channel == currentRight) {
@@ -118,6 +119,7 @@ void controllerChange(int channel, int number, int value, long timestamp, String
 }
 
 void noteOn(int channel, int pitch, int velocity, long timestamp, String bus_name) {
+  channel+=1;
   println();
   println("Note On:");
   println("--------");
@@ -129,24 +131,25 @@ void noteOn(int channel, int pitch, int velocity, long timestamp, String bus_nam
 
   //if twoWobMode
 
-  if (channel != currentLeft-1||channel != currentRight-1) {
-    if (channel<7) {
+  if (channel != currentLeft||channel != currentRight) {
+    if (channel<8) {
       if (twoWobMode)currentLeft=wobLeft;
       else currentLeft = channel;
     } else {
       if (twoWobMode)currentRight=wobRight;
       else currentRight=channel;
     }
-    currentlyActive=currentLeft*10+currentRight;
+    currentlyActive=currentLeft*10+(currentRight-7);
 
     OscMessage myMessage = new OscMessage("/currentcamera");
-    myMessage.add(currentLeft*10+currentRight);
+    myMessage.add(currentlyActive);
     oscP5.send(myMessage, myRemoteLocation); 
     println("OSC mssg send currentcamera: "+currentlyActive);
   }
 }
 
 void noteOff(int channel, int pitch, int velocity, long timestamp, String bus_name) {
+  channel+=1;
   println();
   println("Note Off:");
   println("--------");
@@ -156,16 +159,16 @@ void noteOff(int channel, int pitch, int velocity, long timestamp, String bus_na
   println("Timestamp:"+timestamp);
   println("Recieved on Bus:"+bus_name);
 
-  if (channel == currentLeft-1||channel == currentRight-1) {
+  if (channel == currentLeft||channel == currentRight) {
 
-    if (channel<7) currentLeft=0;
-    else  currentRight=0;
+    if (channel<8) currentLeft=0;
+    else  currentRight=7;
 
 
-    currentlyActive=currentLeft*10+currentRight;
+    currentlyActive=currentLeft*10+(currentRight-7);
 
     OscMessage myMessage = new OscMessage("/currentcamera");
-    myMessage.add(currentLeft+currentRight);
+    myMessage.add(currentlyActive);
     oscP5.send(myMessage, myRemoteLocation); 
     println("OSC mssg send currentcamera: "+currentlyActive);
   }
