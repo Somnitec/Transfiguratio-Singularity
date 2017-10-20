@@ -6,6 +6,13 @@ import netP5.*;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
+int high =-1;
+int mid = -1;
+int low = -1;
+int left = -1;
+int right = -1;
+int currentcamera =-1;
+
 void setup() {
   size(400, 400);
   frameRate(25);
@@ -25,6 +32,13 @@ void setup() {
 
 void draw() {
   background(0);
+  text("high  : "+high, 10, 10);
+  text("mid   : "+mid, 10, 30);
+  text("low   : "+low, 10, 50);
+  text("left  : "+left, 10, 70);
+  text("right : "+right, 10, 90);
+
+  text("currentcamera :"+currentcamera, 10, 110);
 }
 
 void mousePressed() {
@@ -44,6 +58,14 @@ void oscEvent(OscMessage theOscMessage) {
   print("### received an osc message.");
   print(" addrpattern: "+theOscMessage.addrPattern());
   println(" value: "+theOscMessage.get(0).intValue());
+
+  if (theOscMessage.addrPattern().equals("/high"))high=theOscMessage.get(0).intValue();
+  else if (theOscMessage.addrPattern().equals("/mid"))mid=theOscMessage.get(0).intValue();
+  else if (theOscMessage.addrPattern().equals("/low"))low=theOscMessage.get(0).intValue();
+  else if (theOscMessage.addrPattern().equals("/left"))left=theOscMessage.get(0).intValue();
+  else if (theOscMessage.addrPattern().equals("/right"))right=theOscMessage.get(0).intValue();
+  else if (theOscMessage.addrPattern().equals("/currentcamera"))currentcamera=theOscMessage.get(0).intValue();
+
 
 
   OscMessage myMessage = new OscMessage(theOscMessage.netAddress().address());
